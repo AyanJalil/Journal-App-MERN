@@ -26,7 +26,17 @@ async function LoginUser(req, res) {
 
         const token = generateToken(user);
 
-        const newSession = await Sessions.create({
+        const activeSessions = await Sessions.find({ userId: user._id, isActive: true }).sort({ createdAt: 1 });
+
+        if (activeSessions.length >= 2) {
+            const sessionsToDeactivate = activeSessions.slice(0, activeSessions.length - 1); // Keep latest 1
+            for (const s of sessionsToDeactivate) {
+                s.isActive = false;
+                await s.save();
+            }
+        }
+
+        await Sessions.create({
             userId: user._id,
             accessToken: token,
             userAgent,
@@ -36,17 +46,6 @@ async function LoginUser(req, res) {
             lastUsedAt: new Date()
         });
 
-        const activeSessions = await Sessions.find({ userId: user._id, isActive: true }).sort({ createdAt: 1 });
-
-        if (activeSessions.length > 2) {
-            const sessionsToDeactivate = activeSessions.slice(0, activeSessions.length - 2);
-
-            for (const s of sessionsToDeactivate) {
-                s.isActive = false;
-                await s.save();
-            }
-        }
-
         res.status(200).json({ user, token });
 
     } catch (error) {
@@ -54,6 +53,5 @@ async function LoginUser(req, res) {
         res.status(500).json({ success: false, message: 'Error during login' });
     }
 }
-
 
 export default LoginUser;
