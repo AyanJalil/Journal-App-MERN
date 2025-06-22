@@ -11,9 +11,6 @@ cd backend
 Install dependencies:
 npm install
 
-Configure environment variables (if required):
-Create a .env file and add your MongoDB URI, JWT secret, etc.
-
 Run the backend server:
 node src/app.js
 
